@@ -236,12 +236,17 @@
       document.getElementById("monster2").value = "";
       document.getElementById("monster3").value = "";
 
-      // 結果部分のセルを空にする
+      // 結果部分のセルのテキストを空に
       const resultContainers = [document.getElementById("results1"), document.getElementById("results2"), document.getElementById("results3")];
       resultContainers.forEach(container => {
         const cells = container.querySelectorAll('.result-cell.value-line');
         cells.forEach(cell => cell.textContent = "");  // セルの中身を空に
       });
+
+      // 入力ボックスが空の状態で、結果表示を更新する
+      setupSearch("monster1", "results1");
+      setupSearch("monster2", "results2");
+      setupSearch("monster3", "results3");
     });
   </script>
 
