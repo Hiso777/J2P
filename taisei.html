@@ -236,10 +236,12 @@
       document.getElementById("monster2").value = "";
       document.getElementById("monster3").value = "";
 
-      // 結果を空欄にする
-      createResultDisplay(document.getElementById("results1"), "");
-      createResultDisplay(document.getElementById("results2"), "");
-      createResultDisplay(document.getElementById("results3"), "");
+      // 結果部分のセルを空にする
+      const resultContainers = [document.getElementById("results1"), document.getElementById("results2"), document.getElementById("results3")];
+      resultContainers.forEach(container => {
+        const cells = container.querySelectorAll('.result-cell.value-line');
+        cells.forEach(cell => cell.textContent = "");  // セルの中身を空に
+      });
     });
   </script>
 
