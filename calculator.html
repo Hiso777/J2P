@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>計算機ページ</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background: #f0f0f0;
+      position: relative;
+      height: 100%; /* body の高さを100%に設定 */
+      overflow-y: hidden; /* 縦スクロールバーを表示しない */
+    }
+    h1 {
+      text-align: left;
+    }
+    /* 入力ボックスとボタンを横並びにするためにflexboxを使用 */
+    .input-container {
+      display: flex;
+      gap: 1rem; /* 入力ボックスとボタンの間隔を1remに設定 */
+      align-items: center; /* ボタンと入力ボックスを縦中央に揃える */
+      margin-top: 1rem;
+    }
+    input, button {
+      font-size: 1.2rem;
+      padding: 0.5rem;
+      width: 200px;
+    }
+    .result {
+      margin-top: 1rem;
+      font-weight: bold;
+      font-size: 2rem;
+      color: #007bff;
+      text-align: left;
+    }
+    .g-size-result {
+      margin-top: 1rem;
+      font-weight: bold;
+      font-size: 2rem;
+      color: #28a745;
+      text-align: left;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    /* トップページに戻るリンクのスタイル */
+    #backToTopPageLink {
+      position: fixed;
+      bottom: 20px;
+      left: 20px; /* 左下に配置 */
+      font-size: 1.2rem;
+      color: #007bff;
+      text-decoration: none; /* リンクの下線を消す */
+      z-index: 100; /* 他の要素より前面に表示 */
+    }
+
+    #backToTopPageLink:hover {
+      color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>特攻の命中率計算</h1>
+  <label for="numberInput">特攻を使うモンスターの現在HPを半角数字で入力</label><br>
+  <!-- 入力ボックスとボタンを横並びにするためのdiv -->
+  <div class="input-container">
+    <input type="number" id="numberInput" step="1" placeholder="例：160">
+    <button id="calcButton">計算する</button>
+    <button id="resetButton">リセット</button> <!-- リセットボタンを右に配置 -->
+  </div>
+  <div class="result" id="resultDisplay">S・Mサイズへの命中率：--%</div>
+  <div class="g-size-result" id="gSizeResult">Gサイズへの命中率：--%</div>
+  
+  <!-- トップページに戻るリンク -->
+  <a href="index.html" id="backToTopPageLink">トップページに戻る</a>
+  
+  <script>
+    const input = document.getElementById("numberInput");
+    const button = document.getElementById("calcButton");
+    const resetButton = document.getElementById("resetButton"); // リセットボタン
+    const resultDisplay = document.getElementById("resultDisplay");
+    const gSizeResult = document.getElementById("gSizeResult");
+
+    button.addEventListener("click", () => {
+      const value = input.value.trim(); // 入力値を取得して余計な空白を削除
+
+      // 半角数字以外の場合は結果を '--%' のままにする
+      if (!/^[0-9]+$/.test(value)) {
+        resultDisplay.textContent = "S・Mサイズへの命中率：--%";
+        gSizeResult.textContent = "Gサイズへの命中率：--%";
+      } else {
+        const numberValue = parseInt(value, 10);
+        const result = (numberValue / 30) + 25;
+        resultDisplay.textContent = `S・Mサイズへの命中率：${result.toFixed(1)}%`;
+
+        // Gサイズへの命中率を計算（結果 ÷ 2）
+        const gSizeHitRate = result / 2;
+        gSizeResult.textContent = `Gサイズへの命中率：${gSizeHitRate.toFixed(1)}%`;
+      }
+    });
+
+    resetButton.addEventListener("click", () => {
+      input.value = ""; // 入力ボックスをリセット
+      resultDisplay.textContent = "S・Mサイズへの命中率：--%"; // 結果をリセット
+      gSizeResult.textContent = "Gサイズへの命中率：--%"; // 結果をリセット
+    });
+  </script>
+</body>
+</html>

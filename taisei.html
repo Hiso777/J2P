@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>モンスター耐性検索</title>
+  <style>
+    /* スタイルはそのまま */
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background: #f8f8f8;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .row {
+      margin-bottom: 2.5rem;
+      display: flex;
+      align-items: center;
+      flex-direction: row;
+      justify-content: flex-start;
+    }
+
+    .label-input input {
+      width: 150px;
+      padding: 0.3rem;
+      font-size: 1rem;
+      margin-right: 10px; /* 少し離す */
+    }
+
+    .result-row {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;  /* 横スクロール可能にする */
+      white-space: nowrap; /* 改行させない */
+    }
+
+    .result-cell {
+      text-align: center;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      background: #fff;
+      padding: 6px 0;
+      height: 30px;
+      white-space: nowrap;
+      width: 40px;
+      color: black;
+    }
+
+    .label-line {
+      font-size: 0.6rem;
+      font-weight: bold;
+      text-align: center;
+      padding: 2px 0;
+      background: #f0f0f0;
+      border-bottom: 1px solid #ccc;
+      width: 40px;
+    }
+
+    .value-line {
+      font-size: 0.7rem;
+      padding: 2px 0;
+      width: 40px;
+    }
+
+    .result-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .weak {
+      background-color: #add8e6;
+    }
+
+    .invalid {
+      background-color: #ff6347;
+    }
+
+    .reset-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .reset-button:hover {
+      background-color: #0056b3;
+    }
+
+    /* トップページに戻るリンクのスタイル */
+    #backToTopPageLink {
+      position: fixed;
+      bottom: 20px;
+      left: 20px; /* 左下に配置 */
+      font-size: 1.2rem;
+      color: #007bff;
+      text-decoration: none; /* リンクの下線を消す */
+      z-index: 100; /* 他の要素より前面に表示 */
+    }
+
+    #backToTopPageLink:hover {
+      color: #0056b3;
+    }
+
+    /* 非表示にするためのクラス */
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="row">
+    <div class="label-input">
+      <input type="text" id="monster1" placeholder="モンスター1">
+    </div>
+    <div class="result-row" id="results1"></div>
+  </div>
+
+  <div class="row">
+    <div class="label-input">
+      <input type="text" id="monster2" placeholder="モンスター2">
+    </div>
+    <div class="result-row" id="results2"></div>
+  </div>
+
+  <div class="row">
+    <div class="label-input">
+      <input type="text" id="monster3" placeholder="モンスター3">
+    </div>
+    <div class="result-row" id="results3"></div>
+  </div>
+
+  <!-- 攻撃属性の表示・非表示を切り替えるボタン -->
+  <div class="row">
+    <button id="toggleAttackAttributes" class="reset-button">攻撃属性オンオフ</button>
+    <button class="reset-button" id="resetButton" style="margin-left: 10px;">リセット</button>
+  </div>
+
+  <!-- トップページに戻るリンク -->
+  <a href="index.html" id="backToTopPageLink">トップページに戻る</a>
+  
+  <script>
+    let monsterData = {}; // データ用の変数
+
+    // data.html を読み込む
+    fetch('data.html')
+      .then(response => response.text())
+      .then(html => {
+        // HTMLからデータを取得して設定
+        const dataScript = new DOMParser().parseFromString(html, 'text/html').querySelector('script');
+        eval(dataScript.textContent); // dataオブジェクトをグローバルに展開
+        monsterData = window.monsterData; // monsterDataをグローバル変数に格納
+      });
+
+    const attributes = [
+      "デイン", "メラ", "ヒャド", "バギ", "ギラ", "イオ",
+      "ドルマ", "ベタン", "ザキ", "マホトラ", "眠り", "マヒ",
+      "毒", "混乱", "ルカニ", "ダウン", "マインド", "斬封",
+      "体封", "踊封", "炎", "吹雪", "呪文封", "マヌーサ", "ハック"
+    ];
+
+    function createResultDisplay(resultContainer, monsterName) {
+      resultContainer.innerHTML = "";  // 結果を毎回クリア
+
+      attributes.forEach(attr => {
+        const resultColumn = document.createElement("div");
+        resultColumn.className = "result-column";
+
+        const labelBox = document.createElement("div");
+        labelBox.className = "result-cell label-line";
+        labelBox.textContent = attr;
+
+        const valueBox = document.createElement("div");
+        valueBox.className = "result-cell value-line";
+
+        const resultValue = monsterName ? monsterData[monsterName]?.[attr] ?? "" : "";  // モンスター名が空の場合でも項目は表示する
+
+        valueBox.textContent = resultValue;
+
+        // 「弱い」や「無効」の場合に色を変更
+        if (resultValue === "弱い") {
+          valueBox.classList.add("weak");
+        } else if (resultValue === "無効") {
+          valueBox.classList.add("invalid");
+        }
+
+        resultColumn.appendChild(labelBox);
+        resultColumn.appendChild(valueBox);
+        resultContainer.appendChild(resultColumn);
+      });
+    }
+
+    function setupSearch(inputId, resultId) {
+      const input = document.getElementById(inputId);
+      const resultContainer = document.getElementById(resultId);
+
+      createResultDisplay(resultContainer, "");  // 初期状態で空の結果を表示
+
+      input.addEventListener("input", () => {
+        const name = input.value.trim();  // トリムして余分なスペースを取り除く
+        createResultDisplay(resultContainer, name);  // 名前に基づいて結果を表示
+      });
+    }
+
+    setupSearch("monster1", "results1");
+    setupSearch("monster2", "results2");
+    setupSearch("monster3", "results3");
+
+    // 攻撃属性の表示/非表示を切り替えるボタン
+    const toggleAttackAttributesButton = document.getElementById("toggleAttackAttributes");
+
+    toggleAttackAttributesButton.addEventListener("click", () => {
+      const resultColumns = document.querySelectorAll('.result-column');
+      resultColumns.forEach(column => {
+        const labelBox = column.querySelector('.label-line');
+        if (labelBox && ["デイン", "メラ", "ヒャド", "バギ", "ギラ", "イオ", "ドルマ", "ベタン", "炎", "吹雪"].includes(labelBox.textContent)) {
+          column.classList.toggle('hidden');  // hidden クラスで表示/非表示を切り替える
+        }
+      });
+    });
+
+    // リセットボタンの動作
+    document.getElementById("resetButton").addEventListener("click", () => {
+      document.getElementById("monster1").value = "";
+      document.getElementById("monster2").value = "";
+      document.getElementById("monster3").value = "";
+    });
+  </script>
+
+</body>
+</html>
