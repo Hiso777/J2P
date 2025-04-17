@@ -231,9 +231,15 @@
 
     // リセットボタンの動作
     document.getElementById("resetButton").addEventListener("click", () => {
+      // 入力ボックスを空に
       document.getElementById("monster1").value = "";
       document.getElementById("monster2").value = "";
       document.getElementById("monster3").value = "";
+
+      // 結果を空欄にする
+      createResultDisplay(document.getElementById("results1"), "");
+      createResultDisplay(document.getElementById("results2"), "");
+      createResultDisplay(document.getElementById("results3"), "");
     });
   </script>
 
