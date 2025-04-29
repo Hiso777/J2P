@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>モンスター耐性検索表</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+    .input-section {
+      margin-bottom: 10px;
+      text-align: left;
+    }
+    input[type="text"] {
+      margin: 5px;
+      padding: 4px;
+      width: 150px;
+    }
+    .table-container {
+      overflow-x: auto;
+    }
+    table {
+      border-collapse: collapse;
+      min-width: 1400px;
+      table-layout: fixed;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 4px;
+      word-break: keep-all;
+      height: 2.5em;
+      min-height: 2.5em;
+      max-height: 2.5em;
+      overflow: hidden;
+    }
+    th {
+      background-color: #f0f0f0;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .monster-name-col {
+      width: 12em;
+      min-width: 12em;
+      max-width: 12em;
+      background-color: #fafafa;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    .traits-col {
+      width: 15em;
+      min-width: 15em;
+      max-width: 15em;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .traits-col span {
+      display: inline-block;
+      width: 100%;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .cell {
+      width: 5em;
+      min-width: 5em;
+      max-width: 5em;
+    }
+    .button-row {
+      margin: 10px 0 20px;
+    }
+    .button-row button {
+      margin-right: 10px;
+      padding: 6px 12px;
+      font-size: 1em;
+    }
+    @media (max-width: 768px) {
+      input[type="text"] {
+        width: 100%;
+        max-width: 300px;
+      }
+      th, td {
+        font-size: 1.1em;
+      }
+    }
+    .attack-col, .attack-header {
+      display: table-cell;
+    }
+    .hide-attack .attack-col,
+    .hide-attack .attack-header {
+      display: none;
+    }
+    .abbreviation-explanation {
+      margin-top: 20px;
+      font-size: 0.95em;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+
+<body>
+  <h1 style="text-align: center;">モンスター耐性検索表</h1>
+  <p style="text-align: center;">強種族はk、最強種族はsを名前の最後に入力でも可</p>
+
+  <div class="input-section">
+    <label>モンスター１体目：<input type="text" id="monster1" oninput="updateTable()"></label><br>
+    <label>モンスター２体目：<input type="text" id="monster2" oninput="updateTable()"></label><br>
+    <label>モンスター３体目：<input type="text" id="monster3" oninput="updateTable()"></label>
+  </div>
+
+  <div class="button-row">
+    <button id="toggleAttackButton" onclick="toggleAttackColumns()">攻撃耐性非表示</button>
+    <button onclick="resetInputs()">リセット</button>
+    <button id="toggleAbbrButton" onclick="toggleAbbreviation()">略語説明を表示</button>
+  </div>
+
+<div class="abbreviation-explanation" style="display: none;">
+  <div>いては⇒いてつくはどう</div>
+  <div>ギャンカン⇒ギャンブルカウンター</div>
+  <div>とき○○/いき○○⇒ときどき/いきなり</div>
+  <div>ブレ封/マホ⇒ブレイク封じ/マホトーン</div>
+  <div>連〇⇒れんぞく〇回</div>　
+</div>
+
+
+  <div class="table-container">
+    <table id="resistTable">
+      <thead>
+        <tr>
+          <th class="monster-name-col">モンスター名</th>
+          <th class="traits-col">特性ほか</th>
+          <th class="cell attack-header">デイン</th><th class="cell attack-header">メラ</th><th class="cell attack-header">ヒャド</th>
+          <th class="cell attack-header">バギ</th><th class="cell attack-header">ギラ</th><th class="cell attack-header">イオ</th>
+          <th class="cell attack-header">ドルマ</th><th class="cell attack-header">ベタン</th>
+          <th class="cell">ザキ</th><th class="cell">マホトラ</th><th class="cell">眠り</th>
+          <th class="cell">マヒ</th><th class="cell">毒</th><th class="cell">混乱</th>
+          <th class="cell">マインド</th><th class="cell">斬封</th><th class="cell">体封</th>
+          <th class="cell">踊封</th>
+          <th class="cell attack-header">炎</th><th class="cell attack-header">吹雪</th>
+          <th class="cell">マホトーン</th><th class="cell">マヌーサ</th><th class="cell">ハック</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr id="row1"></tr>
+        <tr id="row2"></tr>
+        <tr id="row3"></tr>
+      </tbody>
+    </table>
+  </div>
+
+<script>
+// 特性列のフォントサイズ自動調整
+function adjustFontSize() {
+  const traitCells = document.querySelectorAll('.traits-col span');
+  traitCells.forEach(cell => {
+    const parentWidth = cell.parentElement.offsetWidth;
+    let fontSize = 16;
+    cell.style.fontSize = fontSize + 'px';
+    while (cell.scrollWidth > parentWidth && fontSize > 6) {
+      fontSize -= 1;
+      cell.style.fontSize = fontSize + 'px';
+    }
+    if (fontSize < 6) cell.style.fontSize = '8px';
+  });
+}
+
+// ウィンドウサイズに応じたテーブル幅調整
+window.addEventListener('resize', adjustTableWidth);
+function adjustTableWidth() {
+  const table = document.querySelector('table');
+  const windowWidth = window.innerWidth;
+  table.style.minWidth = (windowWidth > 1200 || windowWidth <= 768) ? '100%' : '80%';
+}
+
+// テーブル更新
+function updateTable() {
+  for (let i = 1; i <= 3; i++) {
+    const input = document.getElementById("monster" + i).value;
+    const key = getCorrectMonsterName(input);
+    const row = document.getElementById("row" + i);
+    row.innerHTML = "";
+    const nameCell = `<td class="monster-name-col">${key || ""}</td>`;
+    const traitsCell = `<td class="traits-col"><span>${key ? monsterData[key]["特性ほか"] || "" : ""}</span></td>`;
+    const cells = fields.slice(1).map(field => {
+      const val = key ? monsterData[key][field] || "" : "";
+      const cls = isAttack(field) ? 'cell attack-col' : 'cell';
+      return `<td class="${cls}">${val}</td>`;
+    }).join("");
+    row.innerHTML = nameCell + traitsCell + cells;
+  }
+  adjustFontSize();
+}
+
+// 初期化
+window.onload = function () {
+  adjustTableWidth();
+  updateTable();
+}
+
+const monsterData = {
+"強リーファ": {
+"特性ほか": "自動MP回復",
+"デイン": "半減",
+"メラ": "",
+"ヒャド": "",
+"バギ": "",
+"ギラ": "",
+"イオ": "",
+"ドルマ": "弱い",
+"ベタン": "",
+"ザキ": "",
+"マホトラ": "弱い",
+"眠り": "",
+"マヒ": "",
+"毒": "弱い",
+"混乱": "",
+"マインド": "",
+"斬封": "",
+"体封": "",
+"踊封": "無効",
+"炎": "",
+"吹雪": "",
+"マホトーン": "半減",
+"マヌーサ": "半減",
+"ハック": "半減"
+},
+"最強リーファ": {
+"特性ほか": "自動MP回復",
+"デイン": "半減",
+"メラ": "",
+"ヒャド": "",
+"バギ": "",
+"ギラ": "",
+"イオ": "",
+"ドルマ": "弱い",
+"ベタン": "",
+"ザキ": "",
+"マホトラ": "弱い",
+"眠り": "",
+"マヒ": "",
+"毒": "弱い",
+"混乱": "",
+"マインド": "",
+"斬封": "",
+"体封": "",
+"踊封": "無効",
+"炎": "",
+"吹雪": "",
+"マホトーン": "半減",
+"マヌーサ": "無効",
+"ハック": "無効"
+},
+"強スライム": {
+"特性ほか": "",
+"デイン": "半減",
+"メラ": "",
+"ヒャド": "",
+"バギ": "",
+"ギラ": "",
+"イオ": "",
+"ドルマ": "弱い",
+"ベタン": "",
+"ザキ": "",
+"マホトラ": "弱い",
+"眠り": "",
+"マヒ": "",
+"毒": "",
+"混乱": "",
+"マインド": "",
+"斬封": "",
+"体封": "",
+"踊封": "",
+"炎": "",
+"吹雪": "",
+"マホトーン": "半減",
+"マヌーサ": "半減",
+"ハック": "半減"
+},
+"最強スライム": {
+"特性ほか": "AI1～2回",
+"デイン": "半減",
+"メラ": "",
+"ヒャド": "",
+"バギ": "",
+"ギラ": "",
+"イオ": "",
+"ドルマ": "弱い",
+"ベタン": "",
+"ザキ": "",
+"マホトラ": "弱い",
+"眠り": "",
+"マヒ": "",
+"毒": "",
+"混乱": "",
+"マインド": "",
+"斬封": "",
+"体封": "",
+"踊封": "",
+"炎": "",
+"吹雪": "",
+"マホトーン": "半減",
+"マヌーサ": "無効",
+"ハック": "無効"
+},
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+};
+
+const fields = ["特性ほか", "デイン", "メラ", "ヒャド", "バギ", "ギラ", "イオ", "ドルマ", "ベタン",
+  "ザキ", "マホトラ", "眠り", "マヒ", "毒", "混乱", "マインド",
+  "斬封", "体封", "踊封", "炎", "吹雪", "マホトーン", "マヌーサ", "ハック"];
+
+let attackHidden = false;
+
+// 名前補完
+function getCorrectMonsterName(monsterName) {
+  const name = monsterName.trim().toLowerCase();
+  if (name.endsWith("s") || name.endsWith("ｓ") || name.endsWith("Ｓ")) {
+    const baseName = name.slice(0, -1);
+    const fullName = "最強" + baseName;
+    for (let key in monsterData) {
+      if (key.toLowerCase() === fullName.toLowerCase()) return key;
+    }
+  }
+  if (name.endsWith("k") || name.endsWith("ｋ") || name.endsWith("Ｋ")) {
+    const baseName = name.slice(0, -1);
+    const fullName = "強" + baseName;
+    for (let key in monsterData) {
+      if (key.toLowerCase() === fullName.toLowerCase()) return key;
+    }
+  }
+  for (let key in monsterData) {
+    if (key.toLowerCase() === name) return key;
+  }
+  return null;
+}
+
+// 攻撃列判定
+function isAttack(field) {
+  return ["デイン", "メラ", "ヒャド", "バギ", "ギラ", "イオ", "ドルマ", "ベタン", "炎", "吹雪"].includes(field);
+}
+
+// 攻撃列の表示切り替え
+function toggleAttackColumns() {
+  attackHidden = !attackHidden;
+  const table = document.getElementById("resistTable");
+  if (attackHidden) {
+    table.classList.add("hide-attack");
+  } else {
+    table.classList.remove("hide-attack");
+  }
+  document.getElementById("toggleAttackButton").innerText = attackHidden ? "攻撃耐性表示" : "攻撃耐性非表示";
+}
+
+// 入力リセット
+function resetInputs() {
+  document.getElementById("monster1").value = "";
+  document.getElementById("monster2").value = "";
+  document.getElementById("monster3").value = "";
+  updateTable();
+}
+
+// 略語説明の表示/非表示切り替え
+function toggleAbbreviation() {
+  const abbr = document.querySelector('.abbreviation-explanation');
+  const button = document.getElementById('toggleAbbrButton');
+  if (abbr.style.display === 'none') {
+    abbr.style.display = 'block';
+    button.innerText = '略語説明を非表示';
+  } else {
+    abbr.style.display = 'none';
+    button.innerText = '略語説明を表示';
+  }
+}
+
+// ホイールの縦スクロールで横にスクロールできるようにする
+const tableContainer = document.querySelector('.table-container');
+
+tableContainer.addEventListener('wheel', function(e) {
+  if (e.deltaY === 0) return; // 横スクロールは無視
+  e.preventDefault();         // 通常の縦スクロールをキャンセル
+  tableContainer.scrollLeft += e.deltaY; // 横スクロールに変換
+}, { passive: false });
+
+
+</script>
+
+</body>
+</html>
